@@ -1,0 +1,7 @@
+NAMES NOT RECOGNIZED:
+- RHINO, SHRIMP, LEMUR, HOG, KRILL, HYENA, URCHIN, SERPENT, LIGER, ANTEATER, HOUSE CAT
+
+NAMES RECOGNIZED:
+- N-WORD, N-WORDFISH (implement blacklist?)
+
+Plural works sometimes, but shouldn't.

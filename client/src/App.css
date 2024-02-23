@@ -33,6 +33,34 @@ button { background-color: transparent; border: none; outline: none; }
   color: white;
 }
 
+.playerName {
+  font-style: italic;
+  font-size: .8em;
+  color: var(--primary);
+}
+
+.activePlayerName {
+  font-weight: bold;
+  font-style: italic;
+  font-size: .8em;
+  color: var(--accent);
+}
+
+.title {
+  font-family: "Poller One";
+  font-size: 5em;
+  line-height: 1em;
+  color: white;
+}
+
+.subtitle {
+  font-size: 3em;
+  font-weight: bold;
+  color: white;
+  
+  padding-bottom: 1em;
+}
+
 .history {
   position: absolute;
   display: flex;

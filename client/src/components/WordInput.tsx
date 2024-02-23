@@ -29,7 +29,7 @@ export const WordInput = ({
       const response = await fetch([url, params, search].join(""));
       const { results } = await response.json();
 
-      if (!results.length) { throw Error ("Animal could not be found.") }
+      if (!results.length) { throw Error (`Could not find animal named "${search}".`) }
 
       const fetchedNames = results.map((a: any) => a.vernacularNames);
       const fetchedNamesSorted = fetchedNames.sort((a: any[], b: any[]) => a.length - b.length);
@@ -37,7 +37,7 @@ export const WordInput = ({
         return arr.some(({ vernacularName, language }) => vernacularName.toUpperCase() === search && language === "eng")
       });
 
-      if (!matchingNames) { throw Error ("Animal name could not be found.") }
+      if (!matchingNames) { throw Error (`Could not find animal named "${search}".`) }
 
       const matchingNamesEnglish = matchingNames.filter(({language}: {language: string}) => language === "eng");
       const matchingNamesUnique = toUniqueNames(matchingNamesEnglish);

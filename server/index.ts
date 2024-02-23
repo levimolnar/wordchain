@@ -29,31 +29,56 @@ server.listen(3001, () => {
 //   });
 // });
 
+const roomObj: {[key: string]: boolean} = {};
+
 io.on("connection", (socket: any) => {
+
+  // if game is already started don't allow client to join
+  if (roomObj["roomId"]) {
+    socket.emit("roomConnection", false);
+    return;
+  };
+
   socket.join("roomId");
+  socket.emit("roomConnection", true);
+
   const socketIds: string[] = Array.from(io.sockets.adapter.rooms.get("roomId")!);
+  console.log(`${socket.id} connected to ${"roomId"}`, roomObj["roomId"]);
   io.emit("playersChange", socketIds);
-  console.log(`${socket.id} connected to ${"roomId"}`);
 
-  socket.on('disconnect', function(){
-    const socketSet: Set<string> | undefined = io.sockets.adapter.rooms.get("roomId");
-    const socketIds2: string[] = socketSet ? Array.from(socketSet) : [];
-    io.emit("playersChange", socketIds2);
+  socket.on("disconnect", () => {
     console.log(`${socket.id} disconnected from to ${"roomId"}`);
-  });
-});
 
-io.on("connection", (socket: any) => {
+    const socketSet: Set<string> = io.sockets.adapter.rooms.get("roomId") ?? new Set<string>();
+    const socketIds: string[] = Array.from(socketSet);
+    io.emit("playersChange", socketIds);
+
+    // end game if lobby empty
+    if ( socketSet.size < 2) {
+      io.emit("gameEnded");
+      roomObj["roomId"] = false;
+      return;
+    };
+
+    // if current player has turn while disconnecting pass turn on
+  });
+
   socket.on("start", () => {
     console.log(`${socket.id} has started the game.`);
+
     io.emit("gameStarted");
+    roomObj["roomId"] = true;
+
+    const socketIds: string[] = Array.from(io.sockets.adapter.rooms.get("roomId")!);
+    const turnIndex = socketIds.indexOf(socket.id);
+    io.emit("turnInfo", [], socketIds[turnIndex]);
   });
 
   socket.on("submit", (history: string[]) => {
     const socketIds: string[] = Array.from(io.sockets.adapter.rooms.get("roomId")!);
     const turnIndex = socketIds.indexOf(socket.id);
     const nextIndex = (turnIndex + 1) % socketIds.length;
-
-    socket.to("roomId").emit("turnInfo", history, nextIndex);
+    // socket.to("roomId").emit("turnInfo", history, socketIds[nextIndex]);
+    io.emit("turnInfo", history, socketIds[nextIndex]);
   });
 });

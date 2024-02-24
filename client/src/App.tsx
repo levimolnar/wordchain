@@ -20,6 +20,17 @@ const PlayerPanel = ({ players, turnId }: { players: string[], turnId: string })
           {playerName}
         </div>
       )}
+      {/* <div style={{lineHeight: "2em", fontSize: ".8em", paddingTop: "10px"}}>
+        WAITING (-):
+      </div> */}
+      {/* {players.map(playerName => 
+        <div 
+          className={(turnId === playerName) ? "activePlayerName" : "playerName"}
+          key={playerName}
+        >
+          {playerName}
+        </div>
+      )} */}
     </div>
   );
 };
@@ -27,7 +38,7 @@ const PlayerPanel = ({ players, turnId }: { players: string[], turnId: string })
 const GameSetup = ({ startFunc }: { startFunc: Function }) => { 
   return (
     <>
-      <div className="title">NAME CHAIN</div>
+      <div className="title">WORD CHAIN</div>
       <div className="subtitle">ANIMALS EDITION</div>
       <button
         className="startButton"
@@ -47,22 +58,45 @@ const GameInProgress = ({
   
   return (
     <div className="mainContent">
-      <History history={history}/>
+      <History />
       <WordInput 
-        history={history}
         emitFunc={emitSubmit}
-        yourTurn={turn}
       />
     </div>
   );
 };
 
-const GameContext = createContext();
+const GameWaiting = () => { 
+return (
+  <div className="mainContent">
+  </div>
+);
+};
+
+
+interface GameContextType {
+  players: string[];
+  turnClientId: string;
+  yourTurn: boolean;
+  history: Set<string>;
+};
+
+const initGameValues: GameContextType = {
+  players: [],
+  turnClientId: "",
+  yourTurn: false,
+  history: new Set(),
+};
+
+export const GameContext = createContext(initGameValues);
 
 const App = () => {
 
   const [players, setPlayers] = useState<string[]>([]);
-  const [gameStarted, setGameStarted] = useState<boolean>(false);
+  // const [gameStarted, setGameStarted] = useState<boolean>(false);
+  
+  const [gameStatus, setGameStatus] = useState<"setup" | "started" | "waiting">("setup");
+
   const [turnClientId, setTurnClientId] = useState<string>("");
   const [yourTurn, setYourTurn] = useState<boolean>(false);
   const [history, setHistory] = useState<Set<string>>(new Set()); 
@@ -73,19 +107,19 @@ const App = () => {
       setPlayers(newPlayers);
     });
 
-    // if game has already started when joining
-    // socket.on("alreadyStarted", () => {
-    //   setGameStarted(true);
-    // });
-
     // if other client starts game
     socket.on("gameStarted", () => {
-      setGameStarted(true);
+      setGameStatus("started");
     });
 
     // if game is ended
     socket.on("gameEnded", () => {
-      setGameStarted(false);
+      setGameStatus("setup");
+    });
+
+    // if game has already started when joining
+    socket.on("roomConnection", () => {
+      setGameStatus("waiting");
     });
 
     socket.on("turnInfo", (bcHistory, turnId) => {
@@ -102,24 +136,46 @@ const App = () => {
   // start game
   const startGame = () => { 
     socket.emit("start");
-    setYourTurn(true);
+    // setYourTurn(true);
   };
 
   const emitSubmit = (newHistory: string[]) => {
-    socket.emit("submit", newHistory);
     setHistory(new Set(newHistory));
     setYourTurn(false);
+
+    socket.emit("submit", newHistory);
   };
+
+  const contextValue: GameContextType = {
+    players,
+    turnClientId,
+    yourTurn,
+    history,
+  };
+
+  const statusSwitch = () => {
+    switch(gameStatus) {
+      case "setup":
+        return <GameSetup startFunc={startGame} />;
+      case "started":
+        return <GameInProgress emitSubmit={emitSubmit}/>;
+      case "waiting":
+        return <GameWaiting />;
+      default:
+        return <></>;
+    }
+  }
 
   return (
     <div className="app">
-      <GameContext.Provider value={{players, turnClientId}}>
+      <GameContext.Provider value={contextValue}>
         <PlayerPanel players={players} turnId={turnClientId}/>
-        {
-          gameStarted 
+        {/* {
+          (gameStatus === "started") 
           ? <GameInProgress emitSubmit={emitSubmit}/>
           : <GameSetup startFunc={startGame} />
-        }
+        } */}
+        {statusSwitch()}
       </GameContext.Provider>
     </div>
   );

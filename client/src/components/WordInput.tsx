@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { GameContext } from "../App";
 
 // import { io } from 'socket.io-client';
 // const socket = io("http://localhost:3001");
@@ -6,15 +7,9 @@ import { useState } from "react";
 const url = "https://api.gbif.org/v1/species/search"
 const params = "?highertaxon_key=1&qField=VERNACULAR&limit=250&q="
 
-export const WordInput = ({
-  history, 
-  emitFunc,
-  yourTurn,
-}: {
-  history: Set<string>, 
-  emitFunc: (newHistory: string[]) => void,
-  yourTurn: boolean,
-}) => {
+export const WordInput = ({ emitFunc }: { emitFunc: (newHistory: string[]) => void }) => {
+
+  const { turnClientId, yourTurn, history } = useContext(GameContext);
 
   const [submitDebounce, setSubmitDebounce] = useState<boolean>(false);
   const [wordError, setWordError] = useState<string>("");
@@ -92,11 +87,11 @@ export const WordInput = ({
               className="wordField"
               type="text" 
               name="animal"
-              placeholder={history.size ? "" : "animal common name"}
+              placeholder={history.size ? "" : "animal name (common)"}
             />
           </>
         : <div className="wordDisplay">
-            <i>WAIT YOUR TURN...</i>
+            <i>{turnClientId}'S TURN.</i>
           </div>
       }
       <div className="error">

@@ -22,39 +22,40 @@ server.listen(3001, () => {
   console.log("server running at http://localhost:3001");
 });
 
-// io.on("connection", (socket: any) => {
-//   console.log("user connected:", socket.id);
-//   socket.on("animal", (name: string) => {
-//     console.log(name);
-//   });
-// });
-
 const roomObj: {[key: string]: boolean} = {};
+
+const getRoomSocketIds = (roomName: string): string[] => 
+  Array.from(io.sockets.adapter.rooms.get(roomName) ?? new Set<string>());
 
 io.on("connection", (socket: any) => {
 
-  // if game is already started don't allow client to join
-  if (roomObj["roomId"]) {
-    socket.emit("roomConnection", false);
-    return;
+  // every client joins lobby room
+  socket.join("roomId-lobby");
+
+  // only clients that joined during game setup join game room
+  if (!roomObj["roomId"]) {
+    socket.join("roomId-game");
+  } else { 
+    socket.emit("roomConnection", false) 
   };
 
-  socket.join("roomId");
-  socket.emit("roomConnection", true);
-
-  const socketIds: string[] = Array.from(io.sockets.adapter.rooms.get("roomId")!);
-  console.log(`${socket.id} connected to ${"roomId"}`, roomObj["roomId"]);
-  io.emit("playersChange", socketIds);
+  // emit playerids in game to client
+  const gameRoomIds = getRoomSocketIds("roomId-game");
+  io.emit("playersChange", gameRoomIds);
 
   socket.on("disconnect", () => {
-    console.log(`${socket.id} disconnected from to ${"roomId"}`);
+    // console.log(`${socket.id} disconnected from to ${"roomId-game"}`);
 
-    const socketSet: Set<string> = io.sockets.adapter.rooms.get("roomId") ?? new Set<string>();
-    const socketIds: string[] = Array.from(socketSet);
-    io.emit("playersChange", socketIds);
+    // const newGameRoomIds = gameRoomIds.filter(id => id !== socket.id);
+    const newGameRoomIds = getRoomSocketIds("roomId-game");
+    io.emit("playersChange", newGameRoomIds);
 
     // end game if lobby empty
-    if ( socketSet.size < 2) {
+    if ( newGameRoomIds.length < 2) {
+
+      const lobbyRoomIds = getRoomSocketIds("roomId-lobby");
+      lobbyRoomIds.forEach(id => io.sockets.sockets.get(id)?.join("roomId-game"));
+      io.emit("playersChange", lobbyRoomIds);
       io.emit("gameEnded");
       roomObj["roomId"] = false;
       return;
@@ -69,16 +70,15 @@ io.on("connection", (socket: any) => {
     io.emit("gameStarted");
     roomObj["roomId"] = true;
 
-    const socketIds: string[] = Array.from(io.sockets.adapter.rooms.get("roomId")!);
-    const turnIndex = socketIds.indexOf(socket.id);
-    io.emit("turnInfo", [], socketIds[turnIndex]);
+    const gameRoomIds = getRoomSocketIds("roomId-game");
+    const turnIndex = gameRoomIds.indexOf(socket.id);
+    io.emit("turnInfo", [], gameRoomIds[turnIndex]);
   });
 
   socket.on("submit", (history: string[]) => {
-    const socketIds: string[] = Array.from(io.sockets.adapter.rooms.get("roomId")!);
-    const turnIndex = socketIds.indexOf(socket.id);
-    const nextIndex = (turnIndex + 1) % socketIds.length;
-    // socket.to("roomId").emit("turnInfo", history, socketIds[nextIndex]);
-    io.emit("turnInfo", history, socketIds[nextIndex]);
+    const gameRoomIds = getRoomSocketIds("roomId-game");
+    const turnIndex = gameRoomIds.indexOf(socket.id);
+    const nextIndex = (turnIndex + 1) % gameRoomIds.length;
+    io.emit("turnInfo", history, gameRoomIds[nextIndex]);
   });
 });

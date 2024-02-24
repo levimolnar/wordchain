@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
+import { GameContext } from "../App";
 
 const HistoryItem = ({
   length, 
@@ -33,25 +34,30 @@ const HistoryItem = ({
   );
 };
 
-export const History = ({history}: {history: Set<string>}) => (
-  <div className="history">
-    <TransitionGroup>
-      { 
-        Array.from(history).map((word, index) => (
-          <CSSTransition
-            key={word}
-            classNames="slide"
-            timeout={{ enter: 1000 }}
-          >
-            <HistoryItem 
-              key={`history-${index}`}
-              length={history.size}
-              index={index}
-              word={word}
-            />
-          </CSSTransition>
-        ))
-      }
-    </TransitionGroup>
-  </div>
-);
+export const History = () => {
+
+  const { history } = useContext(GameContext);
+  
+  return (
+    <div className="history">
+      <TransitionGroup>
+        { 
+          Array.from(history).map((word, index) => (
+            <CSSTransition
+              key={word}
+              classNames="slide"
+              timeout={{ enter: 1000 }}
+            >
+              <HistoryItem 
+                key={`history-${index}`}
+                length={history.size}
+                index={index}
+                word={word}
+              />
+            </CSSTransition>
+          ))
+        }
+      </TransitionGroup>
+    </div>
+  )
+};

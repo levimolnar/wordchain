@@ -5,6 +5,7 @@ import { WordInput } from './components/WordInput';
 import './App.css';
 
 import { socket } from './socket';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
 const PlayerPanel = ({ players, turnId }: { players: string[], turnId: string }) => { 
   return (
@@ -35,11 +36,25 @@ const PlayerPanel = ({ players, turnId }: { players: string[], turnId: string })
   );
 };
 
+const Title = () => (
+  <>
+    <div className="title">WORD CHAIN</div>
+    <div className="subtitle">ANIMALS EDITION</div>
+  </>
+);
+
+const TitleLogo = () => (
+  <div className="logo">
+    <div className="title">WORD CHAIN</div>
+    <div className="subtitle">ANIMALS EDITION</div>
+  </div>
+);
+
+
 const GameSetup = ({ startFunc }: { startFunc: Function }) => { 
   return (
     <>
-      <div className="title">WORD CHAIN</div>
-      <div className="subtitle">ANIMALS EDITION</div>
+      <Title />
       <button
         className="startButton"
         onClick={() => startFunc()}
@@ -50,27 +65,29 @@ const GameSetup = ({ startFunc }: { startFunc: Function }) => {
   );
 };
 
-const GameInProgress = ({ 
-    emitSubmit,
-  }: { 
-    emitSubmit: (newHistory: string[]) => void,
-  }) => { 
-  
+const GameInProgress = ({ emitSubmit }: { emitSubmit: (newHistory: string[]) => void }) => { 
   return (
-    <div className="mainContent">
-      <History />
-      <WordInput 
-        emitFunc={emitSubmit}
-      />
-    </div>
+    <>
+      <TitleLogo />
+      <div className="mainContent">
+        <History />
+        <WordInput 
+          emitFunc={emitSubmit}
+        />
+      </div>
+    </>
   );
 };
 
 const GameWaiting = () => { 
-return (
-  <div className="mainContent">
-  </div>
-);
+  return (
+    <>
+      <TitleLogo />
+      <div style={{color: "white"}}>
+        Game is already in progress.
+      </div>
+    </>
+  );
 };
 
 
@@ -156,7 +173,18 @@ const App = () => {
   const statusSwitch = () => {
     switch(gameStatus) {
       case "setup":
-        return <GameSetup startFunc={startGame} />;
+        return (
+          // <TransitionGroup>
+          //   <CSSTransition
+          //     in={(gameStatus === "setup")}
+          //     key="setup"
+          //     classNames="slide"
+          //     timeout={{ exit: 1000 }}
+          //   >
+              <GameSetup startFunc={startGame} />
+          //   </CSSTransition>
+          // </TransitionGroup>
+        );
       case "started":
         return <GameInProgress emitSubmit={emitSubmit}/>;
       case "waiting":
@@ -164,18 +192,13 @@ const App = () => {
       default:
         return <></>;
     }
-  }
+  };
 
   return (
     <div className="app">
       <GameContext.Provider value={contextValue}>
         <PlayerPanel players={players} turnId={turnClientId}/>
-        {/* {
-          (gameStatus === "started") 
-          ? <GameInProgress emitSubmit={emitSubmit}/>
-          : <GameSetup startFunc={startGame} />
-        } */}
-        {statusSwitch()}
+        { statusSwitch() }
       </GameContext.Provider>
     </div>
   );

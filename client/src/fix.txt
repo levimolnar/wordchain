@@ -1,7 +1,17 @@
 NAMES NOT RECOGNIZED:
-- RHINO, SHRIMP, LEMUR, HOG, KRILL, HYENA, URCHIN, SERPENT, LIGER, ANTEATER, HOUSE CAT
+- RHINO, 
+- SHRIMP, 
+- LEMUR, 
+- HOG, 
+- KRILL, 
+- HYENA, 
+- URCHIN, 
+- SERPENT, 
+- LIGER, 
+- ANTEATER, 
+- HOUSE CAT
 
 NAMES RECOGNIZED:
-- N-WORD, N-WORDFISH (implement blacklist?)
+- N-WORD, N-WORDFISH (implement banned word list?)
 
 Plural works sometimes, but shouldn't.

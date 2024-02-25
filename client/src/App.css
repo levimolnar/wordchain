@@ -47,6 +47,8 @@ button { background-color: transparent; border: none; outline: none; }
 }
 
 .title {
+  white-space: nowrap;
+
   font-family: "Poller One";
   font-size: 5em;
   line-height: 1em;
@@ -54,11 +56,20 @@ button { background-color: transparent; border: none; outline: none; }
 }
 
 .subtitle {
+  white-space: nowrap;
+
   font-size: 3em;
   font-weight: bold;
   color: white;
   
   padding-bottom: 1em;
+}
+
+.logo {
+  position: absolute;
+  text-align: right;
+  top: 20px; right: 20px;
+  font-size: 50%;
 }
 
 .history {
@@ -79,6 +90,19 @@ button { background-color: transparent; border: none; outline: none; }
     transform 300ms ease-out;
 }
 
+.slide-exit {
+  transform: translateY(0);
+  opacity: 1;
+}
+.slide-exit-active {
+  transform: translateY(-50px);
+  opacity: 0;
+
+  transition: 
+    transform 300ms ease-out,
+    opacity 300ms ease-out;
+}
+
 /* @keyframes wobble {
   0%   { transform: rotate( 0deg); }
   20%  { transform: rotate(-3deg); }
@@ -89,7 +113,9 @@ button { background-color: transparent; border: none; outline: none; }
 } */
 
 .startButton {
-  width: 25%;
+  white-space: nowrap;
+
+  width: 25%; min-width: 150px;
   line-height: 40px;
   border-radius: 6px;
 

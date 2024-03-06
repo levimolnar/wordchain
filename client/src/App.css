@@ -2,19 +2,19 @@
   --background: #111;
   --shadow: #00000044;
   --primary: #fff;
-  --primaryDim: #888;
-  --accent: #18ad5e;
+  --primary2: #999;
+  --primaryDim: #555;
+  --accent: #219d6d;
+  --accent2: #28c187;
   --error: #ff2828;
 }
 
 body { margin: 0; }
 input { background-color: transparent; border: none; outline: none; }
 input:focus { background-color: transparent; border: none; outline: none; }
-button { background-color: transparent; border: none; outline: none; }
+button { background-color: transparent; border: none; outline: none; padding: 0; }
 
-*{
-  font-family: "Roboto";
-}
+*{ font-family: "Roboto"; }
 
 .app {
   width: 100vw; height: 100vh;
@@ -30,18 +30,18 @@ button { background-color: transparent; border: none; outline: none; }
 .playerPanel {
   position: absolute;
   top: 20px; left: 20px;
-  color: white;
+  color: var(--primaryDim);
 }
 
 .playerName {
-  font-style: italic;
+  /* font-style: italic; */
   font-size: .8em;
-  color: var(--primary);
+  color: var(--primaryDim);
 }
 
 .activePlayerName {
   font-weight: bold;
-  font-style: italic;
+  /* font-style: italic; */
   font-size: .8em;
   color: var(--accent);
 }
@@ -103,32 +103,64 @@ button { background-color: transparent; border: none; outline: none; }
     opacity 300ms ease-out;
 }
 
-/* @keyframes wobble {
-  0%   { transform: rotate( 0deg); }
-  20%  { transform: rotate(-3deg); }
-  40%  { transform: rotate( 3deg); }
-  60%  { transform: rotate( 0deg); }
-  80%  { transform: rotate( 3deg); }
-  100% { transform: rotate(-3deg); }
-} */
-
 .startButton {
   white-space: nowrap;
 
-  width: 25%; min-width: 150px;
+  width: 50%; min-width: 150px;
   line-height: 40px;
-  border-radius: 6px;
+  border-radius: 22px;
 
   font-weight: bold;
   font-size: 1em;
 
-  color: var(--accent);
+  color: var(--background);
+  background-color: var(--accent);
   border: 2px solid var(--accent);
 }
 
 .startButton:hover {
-  color: var(--background);
-  background-color: var(--accent);
+  cursor: pointer;
+
+  /* color: var(--background); */
+  background-color: var(--accent2);
+}
+
+.roomDisplay {
+  white-space: nowrap;
+  width: 100%; min-width: 150px;
+  line-height: 40px;
+}
+
+.roomButton {
+  width: 100%;
+  line-height: inherit;
+  border-radius: 6px;
+
+  font-size: 1em;
+
+  color: var(--primary2);
+  border: 2px solid var(--primary2);
+}
+
+.roomButton:hover {
+  cursor: pointer;
+
+  color: #ddd;
+  background-color: #222;
+  /* border: 2px solid var(--primary); */
+}
+
+.roomIdDisplay {
+  width: 100%;
+  line-height: inherit;
+  border-radius: 6px;
+
+  font-size: 1em;
+  text-align: center;
+  font-style: italic;
+
+  color: var(--primary2);
+  border: 2px solid var(--primary2);
 }
 
 .mainContent {

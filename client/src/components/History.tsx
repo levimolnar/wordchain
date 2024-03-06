@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
-import { GameContext } from "../App";
+import { GameContext } from "../context/game";
 
 const HistoryItem = ({
   length, 
@@ -36,8 +36,12 @@ const HistoryItem = ({
 
 export const History = () => {
 
-  const { history } = useContext(GameContext);
-  
+  const {
+    // playerState: [players, setPlayers], 
+    // turnClientState: [turnClientId, setTurnClientId], 
+    historyState: [history, setHistory],
+  } = useContext(GameContext);
+
   return (
     <div className="history">
       <TransitionGroup>

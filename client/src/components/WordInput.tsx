@@ -1,15 +1,18 @@
 import { useContext, useState } from "react";
-import { GameContext } from "../App";
-
-// import { io } from 'socket.io-client';
-// const socket = io("http://localhost:3001");
+import { SocketContext } from "../context/socket";
+import { GameContext } from "../context/game";
 
 const url = "https://api.gbif.org/v1/species/search"
 const params = "?highertaxon_key=1&qField=VERNACULAR&limit=250&q="
 
-export const WordInput = ({ emitFunc }: { emitFunc: (newHistory: string[]) => void }) => {
+export const WordInput = () => {
 
-  const { turnClientId, yourTurn, history } = useContext(GameContext);
+  const socket = useContext(SocketContext);
+  const {
+    // playerState: [players, setPlayers], 
+    turnClientState: [turnClientId], 
+    historyState: [history, setHistory],
+  } = useContext(GameContext);
 
   const [submitDebounce, setSubmitDebounce] = useState<boolean>(false);
   const [wordError, setWordError] = useState<string>("");
@@ -61,8 +64,10 @@ export const WordInput = ({ emitFunc }: { emitFunc: (newHistory: string[]) => vo
         // console.log("found:", animalValidated);
 
         if (animalValidated) {
-          const newHistory = new Set([...Array.from(history), word.toUpperCase()]);
-          emitFunc(Array.from(newHistory));
+          const newHistory = [...Array.from(history), word.toUpperCase()];
+          setHistory(new Set(newHistory));
+          // setYourTurn(false);      
+          socket.emit("submit", newHistory);
           e.target.animal.value = "";
         };
 
@@ -78,7 +83,7 @@ export const WordInput = ({ emitFunc }: { emitFunc: (newHistory: string[]) => vo
       autoComplete="off"
     >
       {
-        yourTurn
+        turnClientId === socket.id
         ? <>
             <span className="firstLetter">
               {Array.from(history).at(-1)?.at(-1)}
@@ -91,7 +96,7 @@ export const WordInput = ({ emitFunc }: { emitFunc: (newHistory: string[]) => vo
             />
           </>
         : <div className="wordDisplay">
-            <i>{turnClientId}'S TURN.</i>
+            <i>please wait your turn</i>
           </div>
       }
       <div className="error">

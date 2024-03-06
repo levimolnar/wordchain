@@ -3,22 +3,34 @@ import { History } from './components/History';
 import { WordInput } from './components/WordInput';
 
 import './App.css';
+import { SocketContext } from './context/socket';
+import { GameContext } from './context/game';
 
-import { socket } from './socket';
-import { CSSTransition, TransitionGroup } from 'react-transition-group';
+// import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
 const PlayerPanel = ({ players, turnId }: { players: string[], turnId: string }) => { 
+
+  const socket = useContext(SocketContext);
+
+  if (!players.length) return (
+    <div className="playerPanel">
+      unconnected
+    </div>
+  );
+
   return (
     <div className="playerPanel">
-      <div style={{lineHeight: "2em", fontSize: ".8em"}}>
-        PLAYERS ({players.length}):
-      </div>
-      {players.map(playerName => 
+      <b style={{lineHeight: "2em", fontSize: ".8em"}}>
+        ROOM ({players.length}):
+      </b>
+      {players.map((playerName, index)=> 
         <div 
-          className={(turnId === playerName) ? "activePlayerName" : "playerName"}
+          className={(playerName === turnId) ? "activePlayerName" : "playerName"}
           key={playerName}
         >
-          {playerName}
+          {(playerName === turnId) ? "●\xa0" : "\xa0\xa0\xa0"} 
+          PLAYER {index + 1}
+          {(playerName === socket.id) ? "\xa0(you)" : ""}
         </div>
       )}
       {/* <div style={{lineHeight: "2em", fontSize: ".8em", paddingTop: "10px"}}>
@@ -51,29 +63,69 @@ const TitleLogo = () => (
 );
 
 
+const RoomDisplay = () => {
+
+  const socket = useContext(SocketContext);
+  const { roomState: [roomId, setRoomId] } = useContext(GameContext);
+
+  return (
+    <div className="roomDisplay">
+      {
+        roomId
+        ? (
+          <div
+            className="roomIdDisplay"
+          >
+            {/* molnar.dev/wordchain?{roomId} */}
+            localhost:3000?{roomId}
+          </div>
+        )
+        : (
+          <button
+            className="roomButton"
+            onClick={() => {
+              socket.emit("createRoom", (response: {roomId: string}) => {
+                setRoomId(response.roomId);
+              });
+            }}
+          >
+            CREATE ROOM
+          </button>
+        )
+      }
+    </div>
+  );
+}
+
 const GameSetup = ({ startFunc }: { startFunc: Function }) => { 
   return (
     <>
       <Title />
-      <button
-        className="startButton"
-        onClick={() => startFunc()}
-      >
-        START GAME
-      </button>
+      <div style={{
+        display: "flex", 
+        width: "50%", 
+        // backgroundColor: "#ff000055",
+        gap: "30px",
+      }}>
+        <button
+          className="startButton"
+          onClick={() => startFunc()}
+        >
+          START GAME
+        </button>
+        <RoomDisplay />
+      </div>
     </>
   );
 };
 
-const GameInProgress = ({ emitSubmit }: { emitSubmit: (newHistory: string[]) => void }) => { 
+const GameInProgress = () => { 
   return (
     <>
       <TitleLogo />
       <div className="mainContent">
         <History />
-        <WordInput 
-          emitFunc={emitSubmit}
-        />
+        <WordInput />
       </div>
     </>
   );
@@ -84,109 +136,72 @@ const GameWaiting = () => {
     <>
       <TitleLogo />
       <div style={{color: "white"}}>
-        Game is already in progress.
+        Game already in progress. Stay in this lobby to join when it ends.
       </div>
     </>
   );
 };
 
-
-interface GameContextType {
-  players: string[];
-  turnClientId: string;
-  yourTurn: boolean;
-  history: Set<string>;
-};
-
-const initGameValues: GameContextType = {
-  players: [],
-  turnClientId: "",
-  yourTurn: false,
-  history: new Set(),
-};
-
-export const GameContext = createContext(initGameValues);
-
 const App = () => {
 
-  const [players, setPlayers] = useState<string[]>([]);
-  // const [gameStarted, setGameStarted] = useState<boolean>(false);
-  
+  const socket = useContext(SocketContext);
+  const {
+    roomState: [roomId, setRoomId],
+    playerState: [players, setPlayers], 
+    turnClientState: [turnClientId, setTurnClientId], 
+    historyState: [history, setHistory],
+  } = useContext(GameContext);
+
+  // const [roomId, setRoomId] = useState<string[]>([]);
   const [gameStatus, setGameStatus] = useState<"setup" | "started" | "waiting">("setup");
-
-  const [turnClientId, setTurnClientId] = useState<string>("");
-  const [yourTurn, setYourTurn] = useState<boolean>(false);
-  const [history, setHistory] = useState<Set<string>>(new Set()); 
-
   useEffect(() => {
-    // if other client joins lobby
-    socket.on("playersChange", newPlayers => {
-      setPlayers(newPlayers);
-    });
 
-    // if other client starts game
-    socket.on("gameStarted", () => {
-      setGameStatus("started");
-    });
+    // join room if url contains room id parameter
+    const urlString = window.location.search.slice(1);
+    if (urlString) { 
+      socket.emit("joinRoom", urlString, (response: any) => {
+        if (response.success) {
+          setRoomId(urlString);
 
-    // if game is ended
-    socket.on("gameEnded", () => {
-      setGameStatus("setup");
-    });
+          // if (response.status === "setup") { 
+          //   setGameStatus("setup");
+          //   console.log(`Joined room "${urlString}".`)
+          // };
+          if (response.status === "inProgress") { 
+            setGameStatus("waiting"); 
+            console.log("Game is already in progress.");
+          };
+        } else {
+          console.log(`Failed to join room "${urlString}"`);
+        };
+      });
+    };
 
-    // if game has already started when joining
-    socket.on("roomConnection", () => {
-      setGameStatus("waiting");
-    });
+    socket.on("playersChange", newPlayers => setPlayers(newPlayers));
+    socket.on("gameStarted", () => setGameStatus("started"));
+    socket.on("gameEnded", () => setGameStatus("setup"));
+    // socket.on("gameInProgress", () => setGameStatus("waiting"));
 
-    socket.on("turnInfo", (bcHistory, turnId) => {
-      setHistory(new Set(bcHistory));
+    socket.on("turnInfo", (historyArr, turnId) => {
+
+      if (historyArr) { setHistory(new Set(historyArr)) };
+
       setTurnClientId(turnId);
-      if (turnId === socket.id) {
-        setYourTurn(true);
-      };
-
-      // console.log("turn", turnId)
+      // if (turnId === socket.id) {
+      //   setYourTurn(true);
+      // };
     });
   }, []);
 
   // start game
-  const startGame = () => { 
-    socket.emit("start");
-    // setYourTurn(true);
-  };
-
-  const emitSubmit = (newHistory: string[]) => {
-    setHistory(new Set(newHistory));
-    setYourTurn(false);
-
-    socket.emit("submit", newHistory);
-  };
-
-  const contextValue: GameContextType = {
-    players,
-    turnClientId,
-    yourTurn,
-    history,
-  };
+  const startGame = () => { socket.emit("start") };
 
   const statusSwitch = () => {
     switch(gameStatus) {
       case "setup":
-        return (
-          // <TransitionGroup>
-          //   <CSSTransition
-          //     in={(gameStatus === "setup")}
-          //     key="setup"
-          //     classNames="slide"
-          //     timeout={{ exit: 1000 }}
-          //   >
-              <GameSetup startFunc={startGame} />
-          //   </CSSTransition>
-          // </TransitionGroup>
-        );
+        return <GameSetup startFunc={startGame} />;
       case "started":
-        return <GameInProgress emitSubmit={emitSubmit}/>;
+        return <GameInProgress />;
       case "waiting":
         return <GameWaiting />;
       default:
@@ -196,10 +211,8 @@ const App = () => {
 
   return (
     <div className="app">
-      <GameContext.Provider value={contextValue}>
-        <PlayerPanel players={players} turnId={turnClientId}/>
-        { statusSwitch() }
-      </GameContext.Provider>
+      <PlayerPanel players={players} turnId={turnClientId}/>
+      { statusSwitch() }
     </div>
   );
 }

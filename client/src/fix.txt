@@ -1,17 +1,7 @@
 NAMES NOT RECOGNIZED:
-- RHINO, 
-- SHRIMP, 
-- LEMUR, 
-- HOG, 
-- KRILL, 
-- HYENA, 
-- URCHIN, 
-- SERPENT, 
-- LIGER, 
-- ANTEATER, 
-- HOUSE CAT
+- BEE, SHRIMP, WALLABY, LEMUR, KRILL, HYENA, ANTEATER, RHINO, URCHIN, KRAIT, SPIDER MONKEY, SERPENT, HOG, LIGER, HOUSE CAT,  
 
 NAMES RECOGNIZED:
-- N-WORD, N-WORDFISH (implement banned word list?)
+- N-WORD, N-WORDFISH, JEW, JEWFISH (implement banned word list?)
 
 Plural works sometimes, but shouldn't.

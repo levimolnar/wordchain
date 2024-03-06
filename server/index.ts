@@ -6,9 +6,11 @@ import { Server } from "socket.io";
 const app = express();
 const server = createServer(app);
 
-// const io = new Server(server);
 // const io = new Server(server, {
-//   connectionStateRecovery: {}
+//   cors: {
+//     origin: "http://localhost:3000",
+//     methods: ["GET", "POST"],
+//   },
 // });
 
 const io = new Server(server, {
@@ -16,69 +18,168 @@ const io = new Server(server, {
     origin: "http://localhost:3000",
     methods: ["GET", "POST"],
   },
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: true,
+  },
 });
 
 server.listen(3001, () => {
   console.log("server running at http://localhost:3001");
 });
 
-const roomObj: {[key: string]: boolean} = {};
+const roomStorage: {
+  [key: string]: {
+    ids: string[],
+    started: boolean, 
+    turnIndex: number | undefined,
+  },
+} = {};
 
 const getRoomSocketIds = (roomName: string): string[] => 
   Array.from(io.sockets.adapter.rooms.get(roomName) ?? new Set<string>());
 
-io.on("connection", (socket: any) => {
 
-  // every client joins lobby room
-  socket.join("roomId-lobby");
+io.on("connection", (socket) => {
 
-  // only clients that joined during game setup join game room
-  if (!roomObj["roomId"]) {
-    socket.join("roomId-game");
-  } else { 
-    socket.emit("roomConnection", false) 
-  };
+  // data.currentRoomId
 
-  // emit playerids in game to client
-  const gameRoomIds = getRoomSocketIds("roomId-game");
-  io.emit("playersChange", gameRoomIds);
+
+  if (socket.recovered) { console.log("\n\nRECOVERY!") };
+
+  socket.on("createRoom", (callback) => {
+    let randomIdString: string;
+
+    do {
+      randomIdString = (+new Date * Math.random()).toString(36).substring(0,6);
+    } while (roomStorage[randomIdString]);
+
+    // store new room
+    roomStorage[randomIdString] = {ids: [socket.id], started: false, turnIndex: undefined};
+    socket.data.currentRoomId = randomIdString;
+
+    // leave other rooms and join new room
+    socket.rooms.forEach(id => socket.leave(id));
+    socket.join(`${randomIdString}-lobby`);
+    socket.join(`${randomIdString}-game`);
+
+    callback({ roomId: randomIdString });
+    socket.emit("playersChange", [socket.id]);
+
+    console.log(`User "${socket.id}" created room "${randomIdString}".`);
+    console.log("Active rooms:", Object.keys(roomStorage), Object.keys(roomStorage).length);
+  });
+
+
+  socket.on("joinRoom", (passedId: string, callback) => {
+    if (!roomStorage[passedId]) {
+      callback({ success: false });
+      return;
+    };
+  
+    // every client joins lobby room
+    socket.join(`${passedId}-lobby`);
+    socket.data.currentRoomId = passedId;
+  
+    // only clients that joined during game setup join game room
+    if (!roomStorage[passedId].started) {
+      socket.join(`${passedId}-game`);
+      roomStorage[passedId].ids.push(socket.id);
+  
+      console.log(`Client "${socket.id}" joined "${passedId}" (GAME ROOM).`);
+      callback({ success: true, status: "setup" });
+    } else { 
+      // socket.emit("gameInProgress");
+      console.log(`Client "${socket.id}" joined "${passedId}" (LOBBY).`);
+      callback({ success: true, status: "inProgress" });
+    };
+  
+    // emit playerids in game to client
+    const gameRoomIds = getRoomSocketIds(`${passedId}-game`);
+    io.in(`${passedId}-lobby`).emit("playersChange", gameRoomIds);
+
+    console.log("\nroomStorage:");
+    console.log(roomStorage[passedId]);
+  });
+
+
+  socket.on("start", () => {
+    console.log(`Client "${socket.id}" has started game at "${socket.data.currentRoomId}".`);
+
+    io.in(`${socket.data.currentRoomId}-lobby`).emit("gameStarted");
+    roomStorage[socket.data.currentRoomId].started = true;
+
+    const gameRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-game`);
+    const socketIndex = gameRoomIds.indexOf(socket.id);
+    roomStorage[socket.data.currentRoomId].turnIndex = socketIndex;
+    io.in(`${socket.data.currentRoomId}-game`).emit("turnInfo", [], gameRoomIds[socketIndex]);
+  });
+
+
+  socket.on("submit", (history: string[]) => {
+    const gameRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-game`);
+    const socketIndex = gameRoomIds.indexOf(socket.id);
+    const nextIndex = (socketIndex + 1) % gameRoomIds.length;
+
+    // console.log("submit roomId: ", socket.data.currentRoomId);
+    // console.log("submit roomStorage: ", roomStorage);
+    console.log(gameRoomIds);
+    console.log(`${gameRoomIds[nextIndex]}, (${nextIndex})`);
+
+    roomStorage[socket.data.currentRoomId].turnIndex = nextIndex;
+    io.in(`${socket.data.currentRoomId}-game`).emit("turnInfo", history, gameRoomIds[nextIndex]);
+  });
+
 
   socket.on("disconnect", () => {
-    // console.log(`${socket.id} disconnected from to ${"roomId-game"}`);
+    console.log(`Client "${socket.id}" disconnected from "${socket.data.currentRoomId}".`);
+    if (!socket.data.currentRoomId) { return };
 
-    // const newGameRoomIds = gameRoomIds.filter(id => id !== socket.id);
-    const newGameRoomIds = getRoomSocketIds("roomId-game");
-    io.emit("playersChange", newGameRoomIds);
+    const newGameRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-game`);
 
-    // end game if lobby empty
-    if ( newGameRoomIds.length < 2) {
-
-      const lobbyRoomIds = getRoomSocketIds("roomId-lobby");
-      lobbyRoomIds.forEach(id => io.sockets.sockets.get(id)?.join("roomId-game"));
-      io.emit("playersChange", lobbyRoomIds);
-      io.emit("gameEnded");
-      roomObj["roomId"] = false;
+    // remove room object if lobby empty
+    if ( newGameRoomIds.length == 0) {
+      console.log(`Room "${socket.data.currentRoomId}" was removed.`);
+      console.log("Active rooms:", Object.keys(roomStorage), Object.keys(roomStorage).length);
+      delete roomStorage[socket.data.currentRoomId];
       return;
     };
 
-    // if current player has turn while disconnecting pass turn on
-  });
+    // remove socket id from room object 
+    const socketIndex = roomStorage[socket.data.currentRoomId].ids.indexOf(socket.id);
+    roomStorage[socket.data.currentRoomId].ids.splice(socketIndex, 1);
 
-  socket.on("start", () => {
-    console.log(`${socket.id} has started the game.`);
+    const newIndex = socketIndex % roomStorage[socket.data.currentRoomId].ids.length;
 
-    io.emit("gameStarted");
-    roomObj["roomId"] = true;
+    // end game if one client left in room
+    if ( newGameRoomIds.length < 2) {
 
-    const gameRoomIds = getRoomSocketIds("roomId-game");
-    const turnIndex = gameRoomIds.indexOf(socket.id);
-    io.emit("turnInfo", [], gameRoomIds[turnIndex]);
-  });
+      // move all clients to game room
+      const lobbyRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-lobby`);
+      lobbyRoomIds.forEach(id => 
+        io.sockets.sockets.get(id)?.join(`${socket.data.currentRoomId}-game`)
+      );
+      io.in(`${socket.data.currentRoomId}-game`).emit("playersChange", lobbyRoomIds);
+      io.in(`${socket.data.currentRoomId}-game`).emit("gameEnded");
 
-  socket.on("submit", (history: string[]) => {
-    const gameRoomIds = getRoomSocketIds("roomId-game");
-    const turnIndex = gameRoomIds.indexOf(socket.id);
-    const nextIndex = (turnIndex + 1) % gameRoomIds.length;
-    io.emit("turnInfo", history, gameRoomIds[nextIndex]);
+      roomStorage[socket.data.currentRoomId] = {ids: lobbyRoomIds, started: false, turnIndex: undefined};
+      return;
+    };
+
+    io.in(`${socket.data.currentRoomId}-lobby`).emit("playersChange", newGameRoomIds);
+
+    // pass turn on if current player has turn while disconnecting  
+    if (newIndex === (roomStorage[socket.data.currentRoomId].turnIndex! % roomStorage[socket.data.currentRoomId].ids.length)) {
+
+      roomStorage[socket.data.currentRoomId].turnIndex = newIndex;
+      io.in(`${socket.data.currentRoomId}-game`).emit("turnInfo", undefined, roomStorage[socket.data.currentRoomId].ids[newIndex]);
+
+      // console.log("newIndex:", newIndex, roomStorage[socket.data.currentRoomId].ids, roomStorage[socket.data.currentRoomId].ids[newIndex]);
+    };
   });
 });
+
+
+// io.on("reconnect", (socket) => {
+//   console.log("\n\nRECONNECTION!", socket);
+// });

@@ -15,7 +15,7 @@ const server = createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "*",
     methods: ["GET", "POST"],
   },
   connectionStateRecovery: {
@@ -45,7 +45,7 @@ io.on("connection", (socket) => {
   // data.currentRoomId
 
 
-  if (socket.recovered) { console.log("\n\nRECOVERY!") };
+  // if (socket.recovered) { console.log("\n\nRECOVERY!") };
 
   socket.on("createRoom", (callback) => {
     let randomIdString: string;
@@ -64,7 +64,8 @@ io.on("connection", (socket) => {
     socket.join(`${randomIdString}-game`);
 
     callback({ roomId: randomIdString });
-    socket.emit("playersChange", [socket.id]);
+    // socket.emit("playerUpdate", [socket.id]);
+    io.in(`${randomIdString}-lobby`).emit("playerUpdate", [socket.id]);
 
     console.log(`User "${socket.id}" created room "${randomIdString}".`);
     console.log("Active rooms:", Object.keys(roomStorage), Object.keys(roomStorage).length);
@@ -96,7 +97,7 @@ io.on("connection", (socket) => {
   
     // emit playerids in game to client
     const gameRoomIds = getRoomSocketIds(`${passedId}-game`);
-    io.in(`${passedId}-lobby`).emit("playersChange", gameRoomIds);
+    io.in(`${passedId}-lobby`).emit("playerUpdate", gameRoomIds);
 
     console.log("\nroomStorage:");
     console.log(roomStorage[passedId]);
@@ -112,22 +113,16 @@ io.on("connection", (socket) => {
     const gameRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-game`);
     const socketIndex = gameRoomIds.indexOf(socket.id);
     roomStorage[socket.data.currentRoomId].turnIndex = socketIndex;
-    io.in(`${socket.data.currentRoomId}-game`).emit("turnInfo", [], gameRoomIds[socketIndex]);
+    io.in(`${socket.data.currentRoomId}-game`).emit("nextTurn", undefined, gameRoomIds[socketIndex]);
   });
 
-
-  socket.on("submit", (history: string[]) => {
+  socket.on("submit", (newWord: string) => {
     const gameRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-game`);
     const socketIndex = gameRoomIds.indexOf(socket.id);
     const nextIndex = (socketIndex + 1) % gameRoomIds.length;
 
-    // console.log("submit roomId: ", socket.data.currentRoomId);
-    // console.log("submit roomStorage: ", roomStorage);
-    console.log(gameRoomIds);
-    console.log(`${gameRoomIds[nextIndex]}, (${nextIndex})`);
-
     roomStorage[socket.data.currentRoomId].turnIndex = nextIndex;
-    io.in(`${socket.data.currentRoomId}-game`).emit("turnInfo", history, gameRoomIds[nextIndex]);
+    io.in(`${socket.data.currentRoomId}-game`).emit("nextTurn", {word: newWord, userId: socket.id, userNumber: socketIndex}, gameRoomIds[nextIndex]);
   });
 
 
@@ -159,20 +154,20 @@ io.on("connection", (socket) => {
       lobbyRoomIds.forEach(id => 
         io.sockets.sockets.get(id)?.join(`${socket.data.currentRoomId}-game`)
       );
-      io.in(`${socket.data.currentRoomId}-game`).emit("playersChange", lobbyRoomIds);
+      io.in(`${socket.data.currentRoomId}-game`).emit("playerUpdate", lobbyRoomIds);
       io.in(`${socket.data.currentRoomId}-game`).emit("gameEnded");
 
       roomStorage[socket.data.currentRoomId] = {ids: lobbyRoomIds, started: false, turnIndex: undefined};
       return;
     };
 
-    io.in(`${socket.data.currentRoomId}-lobby`).emit("playersChange", newGameRoomIds);
+    io.in(`${socket.data.currentRoomId}-lobby`).emit("playerUpdate", newGameRoomIds);
 
     // pass turn on if current player has turn while disconnecting  
     if (newIndex === (roomStorage[socket.data.currentRoomId].turnIndex! % roomStorage[socket.data.currentRoomId].ids.length)) {
 
       roomStorage[socket.data.currentRoomId].turnIndex = newIndex;
-      io.in(`${socket.data.currentRoomId}-game`).emit("turnInfo", undefined, roomStorage[socket.data.currentRoomId].ids[newIndex]);
+      io.in(`${socket.data.currentRoomId}-game`).emit("nextTurn", undefined, roomStorage[socket.data.currentRoomId].ids[newIndex]);
 
       // console.log("newIndex:", newIndex, roomStorage[socket.data.currentRoomId].ids, roomStorage[socket.data.currentRoomId].ids[newIndex]);
     };

@@ -28,7 +28,7 @@ const PlayerPanel = ({ players, turnId }: { players: string[], turnId: string })
           className={(playerName === turnId) ? "activePlayerName" : "playerName"}
           key={playerName}
         >
-          {(playerName === turnId) ? "●\xa0" : "\xa0\xa0\xa0"} 
+          {(playerName === turnId) ? "●\xa0" : "\xa0\xa0"} 
           PLAYER {index + 1}
           {(playerName === socket.id) ? "\xa0(you)" : ""}
         </div>
@@ -86,6 +86,7 @@ const RoomDisplay = () => {
             onClick={() => {
               socket.emit("createRoom", (response: {roomId: string}) => {
                 setRoomId(response.roomId);
+                window.history.replaceState(null, "", `?${response.roomId}`);
               });
             }}
           >
@@ -123,10 +124,10 @@ const GameInProgress = () => {
   return (
     <>
       <TitleLogo />
-      <div className="mainContent">
-        <History />
-        <WordInput />
-      </div>
+      {/* <div className="mainContent"> */}
+      <History />
+      <WordInput />
+      {/* </div> */}
     </>
   );
 };
@@ -162,7 +163,6 @@ const App = () => {
       socket.emit("joinRoom", urlString, (response: any) => {
         if (response.success) {
           setRoomId(urlString);
-
           // if (response.status === "setup") { 
           //   setGameStatus("setup");
           //   console.log(`Joined room "${urlString}".`)
@@ -172,29 +172,31 @@ const App = () => {
             console.log("Game is already in progress.");
           };
         } else {
-          console.log(`Failed to join room "${urlString}"`);
+          // console.log(`Failed to join room "${urlString}"`);
+          window.history.pushState(null, "", window.location.href.split("?")[0]);
         };
       });
     };
 
-    socket.on("playersChange", newPlayers => setPlayers(newPlayers));
+    socket.on("playerUpdate", newPlayers => setPlayers(newPlayers));
     socket.on("gameStarted", () => setGameStatus("started"));
     socket.on("gameEnded", () => setGameStatus("setup"));
     // socket.on("gameInProgress", () => setGameStatus("waiting"));
 
-    socket.on("turnInfo", (historyArr, turnId) => {
-
-      if (historyArr) { setHistory(new Set(historyArr)) };
-
+    socket.on("nextTurn", (newWordObj, turnId) => {
+      if (newWordObj) { setHistory(prev => new Map([...Array.from(prev), [newWordObj.word, {userId: newWordObj.userId, userNumber: newWordObj.userNumber}]])) };
       setTurnClientId(turnId);
-      // if (turnId === socket.id) {
-      //   setYourTurn(true);
-      // };
     });
   }, []);
 
   // start game
-  const startGame = () => { socket.emit("start") };
+  const startGame = () => { 
+    if (roomId) {
+      socket.emit("start") 
+    } else {
+      console.log("Cannot start game without joining room.")
+    }
+  };
 
   const statusSwitch = () => {
     switch(gameStatus) {

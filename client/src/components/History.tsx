@@ -1,67 +1,59 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { CSSTransition, TransitionGroup } from "react-transition-group";
-import { GameContext } from "../context/game";
+  import { useContext, useEffect, useRef, useState } from "react";
+  import { CSSTransition, TransitionGroup } from "react-transition-group";
+  import { GameContext } from "../context/game";
+  import { SocketContext } from "../context/socket";
 
-const HistoryItem = ({
-  length, 
-  index, 
-  word,
-}: {
-  length: number, 
-  index: number, 
-  word: string,
-}) => {
+  const HistoryItem = ({
+    word,
+    user: {userId, userNumber},
+  }: {
+    word: string,
+    user: {userId: string, userNumber: number}
+  }) => {
 
-  const reverseIndex = length - index;
-  const isLast = (index === length - 1);
+    const socket = useContext(SocketContext);
+    const isUser = (userId === socket.id);
 
-  const itemStyle: any = {
-    opacity: 1 / Math.sqrt(reverseIndex),
-    fontWeight: 600 / Math.sqrt(reverseIndex),
-    fontSize: `${2 / Math.cbrt(reverseIndex)}em`,
-    lineHeight: "1em",
-    color: isLast ? "#18ad5e" : "white",
-    transition: "all 300ms ease-out",
-
-    width: "max-content",
-    // backgroundColor: "red",
+    return (
+      <div className="historyRow" style={{backgroundColor: isUser ? "#00B050": ""}}>
+        <div className="historyPlayerNumber" style={{backgroundColor: isUser ? "#00B050" : "#333", color: isUser ? "#000" : "#fff"}}>
+          P{userNumber + 1}
+        </div>
+        <div className="historyWord" style={{backgroundColor: isUser ? "#24d574" : "#444", color: isUser ? "#000" : "#fff"}}>
+          {word.toLowerCase()}
+        </div>
+      </div>
+    );
   };
 
-  return (
-    <div style={itemStyle} className="wobble">
-      {word}
-    </div>
-  );
-};
+  export const History = () => {
 
-export const History = () => {
+    const {
+      // playerState: [players, setPlayers], 
+      // turnClientState: [turnClientId, setTurnClientId], 
+      historyState: [history, setHistory],
+    } = useContext(GameContext);
 
-  const {
-    // playerState: [players, setPlayers], 
-    // turnClientState: [turnClientId, setTurnClientId], 
-    historyState: [history, setHistory],
-  } = useContext(GameContext);
-
-  return (
-    <div className="history">
-      <TransitionGroup>
-        { 
-          Array.from(history).map((word, index) => (
-            <CSSTransition
-              key={word}
-              classNames="slide"
-              timeout={{ enter: 1000 }}
-            >
-              <HistoryItem 
-                key={`history-${index}`}
-                length={history.size}
-                index={index}
-                word={word}
-              />
-            </CSSTransition>
-          ))
-        }
-      </TransitionGroup>
-    </div>
-  )
-};
+    return (
+      <div className="history">
+        <div style={{position: "absolute", width: "100%", height: "100%", background: "linear-gradient(#111 20%, transparent 66%)"}}/>
+        <TransitionGroup>
+          { 
+            Array.from(history).map(([word, user], index) => (
+              <CSSTransition
+                key={word}
+                classNames="slide"
+                timeout={{ enter: 1000 }}
+              >
+                <HistoryItem 
+                  key={`history-${index}`}
+                  word={word}
+                  user={user}
+                />
+              </CSSTransition>
+            ))
+          }
+        </TransitionGroup>
+      </div>
+    )
+  };

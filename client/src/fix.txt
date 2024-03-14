@@ -1,7 +1,7 @@
 NAMES NOT RECOGNIZED:
-- BEE, SHRIMP, WALLABY, LEMUR, KRILL, HYENA, ANTEATER, RHINO, URCHIN, KRAIT, SPIDER MONKEY, SERPENT, HOG, LIGER, HOUSE CAT,  
+- BEE, SHRIMP, WALLABY, LEMUR, KRILL, HYENA, ANTEATER, RHINO, URCHIN, KRAIT, SPIDER MONKEY, SERPENT, HOG, LIGER, HOUSE CAT, YETI CRAB, NAUTILUS, XEME, XERUS,
 
 NAMES RECOGNIZED:
-- N-WORD, N-WORDFISH, JEW, JEWFISH (implement banned word list?)
+- N-WORD, N-WORDFISH, JEW, JEWFISH (add to word blacklist), THRIP (wrong spelling), FOREST ELF
 
-Plural works sometimes, but shouldn't.
+Plural works sometimes, but shouldn't. (leads to overabundance of words starting in "s")

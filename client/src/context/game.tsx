@@ -4,14 +4,15 @@ interface GameContextType {
   roomState: [string, React.Dispatch<React.SetStateAction<string>>];
   playerState: [string[], React.Dispatch<React.SetStateAction<string[]>>];
   turnClientState: [string, React.Dispatch<React.SetStateAction<string>>];
-  historyState: [Set<string>, React.Dispatch<React.SetStateAction<Set<string>>>];
+  // historyState: [Set<string>, React.Dispatch<React.SetStateAction<Set<string>>>];
+  historyState: [Map<string, {userId: string, userNumber: number}>, React.Dispatch<React.SetStateAction<Map<string, {userId: string, userNumber: number}>>>];
 };
 
 export const GameContext = createContext<GameContextType>({
   roomState: ["", () => {}],
   playerState: [[], () => {}],
   turnClientState: ["", () => {}],
-  historyState: [new Set(), () => {}],
+  historyState: [new Map(), () => {}],
 });
 
 export const GameProvider = ({ children }: any) => {
@@ -29,7 +30,8 @@ export const GameProvider = ({ children }: any) => {
   const roomState       = useState<string>("");
   const playerState     = useState<string[]>([]);
   const turnClientState = useState<string>("");
-  const historyState    = useState<Set<string>>(new Set()); 
+  // const historyState    = useState<Set<string>>(new Set()); 
+  const historyState    = useState<Map<string, {userId: string, userNumber: number}>>(new Map()); 
 
   const contextValue: GameContextType = {
     roomState,

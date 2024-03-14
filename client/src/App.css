@@ -4,8 +4,8 @@
   --primary: #fff;
   --primary2: #999;
   --primaryDim: #555;
-  --accent: #219d6d;
-  --accent2: #28c187;
+  --accent: #00B050;
+  --accent2: #24d574;
   --error: #ff2828;
 }
 
@@ -14,7 +14,7 @@ input { background-color: transparent; border: none; outline: none; }
 input:focus { background-color: transparent; border: none; outline: none; }
 button { background-color: transparent; border: none; outline: none; padding: 0; }
 
-*{ font-family: "Roboto"; }
+*{ font-family: "Source Code Pro"; }
 
 .app {
   width: 100vw; height: 100vh;
@@ -29,6 +29,8 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
 
 .playerPanel {
   position: absolute;
+  z-index: 2;
+
   top: 20px; left: 20px;
   color: var(--primaryDim);
 }
@@ -49,7 +51,8 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
 .title {
   white-space: nowrap;
 
-  font-family: "Poller One";
+  font-family: "Unbounded";
+  font-weight: 800;
   font-size: 5em;
   line-height: 1em;
   color: white;
@@ -58,14 +61,18 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
 .subtitle {
   white-space: nowrap;
 
+  font-family: "Unbounded";
+  font-weight: 500;
+
   font-size: 3em;
-  font-weight: bold;
   color: white;
   
   padding-bottom: 1em;
 }
 
 .logo {
+  z-index: 2;
+
   position: absolute;
   text-align: right;
   top: 20px; right: 20px;
@@ -74,23 +81,62 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
 
 .history {
   position: absolute;
+  bottom: calc(20% + 50px);
+
   display: flex;
-  flex-direction: column;
-  width: max-content;
-  bottom: 60px;
+  flex-direction: column-reverse;
+
+  /* width: max-content; */
+  width: 100%;
+  height: calc(80% - 50px);
+}
+
+.historyRow {
+  display: flex;
+  line-height: 1em;
+  transition: all 300ms ease-out;
+
+  margin: 5px 0 5px 0;
+}
+
+/* .historyRowPlayer {
+  display: flex;
+  line-height: 1em;
+  transition: all 300ms ease-out;
+
+  margin: 5px 0 5px 0;
+
+  background-color: #00B050;
+} */
+
+.historyPlayerNumber{
+  width: 40px; line-height: 20px;
+
+  margin-left: 25%;
+  text-align: center;
+  font-family: "Kameron";
+  font-weight: bold;
+}
+
+.historyWord {
+  flex-grow: 1;
+  padding-left: 10px; 
+  line-height: 20px;
+  font-size: .9em; 
+  font-family: "Source Code Pro";
+  text-transform: capitalize;
 }
 
 .slide-enter {
   transform: translateY(25px);
 }
 .slide-enter-active {
-  /* animation: wobble 500ms ease-in-out 1; */
   transform: translateY(0);
   transition: 
     transform 300ms ease-out;
 }
 
-.slide-exit {
+/* .slide-exit {
   transform: translateY(0);
   opacity: 1;
 }
@@ -101,7 +147,7 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
   transition: 
     transform 300ms ease-out,
     opacity 300ms ease-out;
-}
+} */
 
 .startButton {
   white-space: nowrap;
@@ -122,7 +168,9 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
   cursor: pointer;
 
   /* color: var(--background); */
-  background-color: var(--accent2);
+  background-color: #00ff73;
+  /* background: linear-gradient(var(--accent) 50%, var(--accent2)); */
+  border: solid 2px #00ff73;
 }
 
 .roomDisplay {
@@ -167,14 +215,17 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
   width: 50%; height: auto;
   position: relative;
   top: 25%;
+  background-color: cyan;
 }
 
 .wordForm {
+  position: absolute;
+  bottom: 20%;
+
   display: flex;
-  width: 100%; height: 40px;
-  border: 1px solid var(--primary);
-  border-radius: 3px;
-  background-color: var(--shadow);
+  width: 50%; height: 35px;
+  border-bottom: 1px solid var(--primary);
+  /* border-radius: 3px; */
 }
 
 ::placeholder {
@@ -183,17 +234,17 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
 }
 
 .firstLetter {
-  width: min-content; height: 40px; line-height: 40px;
+  width: min-content; height: 35px; line-height: 35px;
   font-size: 1em;
   font-weight: bold;
-  padding-left: 10px;
+  padding-left: 15px;
 
   color: var(--accent);
 }
 
 .wordField {
   width: 100%; height: auto; 
-  line-height: 40px;
+  line-height: 35px;
 
   text-transform: uppercase;
 
@@ -203,13 +254,13 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
 
 .wordDisplay {
   width: 100%; height: auto; 
-  line-height: 40px;
-  text-align: center;
-  font-weight: 300;
+  line-height: 35px;
+  padding-left: 15px;
+  font-size: .9em;
 
   background-color: transparent;
   background-clip: content-box;
-  color: var(--primary);
+  color: var(--primaryDim);
 }
 
 .error {

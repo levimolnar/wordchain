@@ -57,17 +57,18 @@ export const WordInput = () => {
       setSubmitDebounce(true);
       setTimeout(async () => {
 
-        const previousEndLetter = Array.from(history).at(-1)?.at(-1);
-        const word = previousEndLetter ? previousEndLetter + e.target.animal.value : e.target.animal.value;
+        const endLetter = Array.from(history).at(-1)?.[0]?.at(-1);
+        const word = endLetter ? endLetter + e.target.animal.value : e.target.animal.value;
+
+        console.log(word);
 
         const animalValidated = await validateAnimal(word.toUpperCase());
         // console.log("found:", animalValidated);
 
         if (animalValidated) {
-          const newHistory = [...Array.from(history), word.toUpperCase()];
-          setHistory(new Set(newHistory));
-          // setYourTurn(false);      
-          socket.emit("submit", newHistory);
+          // const newHistory = [...Array.from(history), word.toUpperCase()];
+          // socket.emit("submit", newHistory);
+          socket.emit("submit", word.toUpperCase());
           e.target.animal.value = "";
         };
 
@@ -75,6 +76,8 @@ export const WordInput = () => {
       }, 30); 
     };
   };
+
+  console.log(history, history.size);
 
   return (
     <form 
@@ -86,17 +89,17 @@ export const WordInput = () => {
         turnClientId === socket.id
         ? <>
             <span className="firstLetter">
-              {Array.from(history).at(-1)?.at(-1)}
+              { history.size ? Array.from(history).at(-1)?.[0]?.at(-1) : "" }
             </span>
             <input 
               className="wordField"
               type="text" 
               name="animal"
-              placeholder={history.size ? "" : "animal name (common)"}
+              placeholder={history.size ? "..." : "animal name (common)"}
             />
           </>
         : <div className="wordDisplay">
-            <i>please wait your turn</i>
+            <i>Wait for other players to finish turn ...</i>
           </div>
       }
       <div className="error">

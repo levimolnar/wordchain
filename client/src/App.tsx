@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { History } from './components/History';
 import { WordInput } from './components/WordInput';
 
@@ -150,7 +150,7 @@ const App = () => {
     roomState: [roomId, setRoomId],
     playerState: [players, setPlayers], 
     turnClientState: [turnClientId, setTurnClientId], 
-    historyState: [history, setHistory],
+    historyState: [, setHistory],
   } = useContext(GameContext);
 
   // const [roomId, setRoomId] = useState<string[]>([]);
@@ -187,7 +187,7 @@ const App = () => {
       if (newWordObj) { setHistory(prev => new Map([...Array.from(prev), [newWordObj.word, {userId: newWordObj.userId, userNumber: newWordObj.userNumber}]])) };
       setTurnClientId(turnId);
     });
-  }, []);
+  });
 
   // start game
   const startGame = () => { 

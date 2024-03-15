@@ -11,7 +11,7 @@ export const WordInput = () => {
   const {
     // playerState: [players, setPlayers], 
     turnClientState: [turnClientId], 
-    historyState: [history, setHistory],
+    historyState: [history],
   } = useContext(GameContext);
 
   const [submitDebounce, setSubmitDebounce] = useState<boolean>(false);

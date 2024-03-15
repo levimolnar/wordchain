@@ -1,4 +1,4 @@
-  import { useContext, useEffect, useRef, useState } from "react";
+  import { useContext } from "react";
   import { CSSTransition, TransitionGroup } from "react-transition-group";
   import { GameContext } from "../context/game";
   import { SocketContext } from "../context/socket";
@@ -31,7 +31,7 @@
     const {
       // playerState: [players, setPlayers], 
       // turnClientState: [turnClientId, setTurnClientId], 
-      historyState: [history, setHistory],
+      historyState: [history],
     } = useContext(GameContext);
 
     return (

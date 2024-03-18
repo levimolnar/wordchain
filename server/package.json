@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "prestart": "chmod +x ts-node",
+    "prestart": "chmod +x node_modules/.bin/ts-node",
     "start": "ts-node index.ts"
   },
   "dependencies": {

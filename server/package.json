@@ -1,7 +1,6 @@
 {
   "scripts": {
-    "prestart": "chmod +x node_modules/.bin/ts-node",
-    "start": "nodemon index.ts"
+    "start": "ts-node index.ts"
   },
   "dependencies": {
     "express": "^4.18.2",

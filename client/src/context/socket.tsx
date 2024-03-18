@@ -3,13 +3,10 @@ import { io, Socket } from 'socket.io-client';
 
 
 const address = process.env['REACT_APP_SERVER_ADDRESS'] ?? "localhost";
-// const port = process.env['REACT_APP_SERVER_PORT'] ?? "3001";
+const port = process.env['REACT_APP_SERVER_PORT'] ?? "3001";
 
-// const socket = io(`http://${address}:${port}`);
-// console.log(`http://${address}:${port}`);
-
-const socket = io(`http://${address}`);
-console.log(`http://${address}`);
+const socket = io(`https://${address}:${port}`);
+console.log(`https://${address}:${port}`);
 
 export const SocketContext = createContext<Socket>(socket);
 

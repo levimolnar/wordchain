@@ -77,7 +77,7 @@ export const WordInput = () => {
   
       if (!matchingAnimal) { throw Error(`Could not find animal named "${search}".`); }
   
-      // Get all english vernacular names and scientific name of the found animal
+      // get all english vernacular names and scientific name of the found animal
       const matchingVernacularNamesEnglish = matchingAnimal.vernacularNames
         .filter(({ language }: { language: string }) => language === "eng")
         .map(({ vernacularName }: { vernacularName: string }) => vernacularName);

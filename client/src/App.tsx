@@ -187,14 +187,14 @@ const App = () => {
       if (newWordObj) { setHistory(prev => new Map([...Array.from(prev), [newWordObj.word, {userId: newWordObj.userId, userNumber: newWordObj.userNumber}]])) };
       setTurnClientId(turnId);
     });
-  });
+  }, []);
 
   // start game
   const startGame = () => { 
     if (roomId) {
-      socket.emit("start") 
+      socket.emit("start") ;
     } else {
-      console.log("Cannot start game without joining room.")
+      console.log("Cannot start game without joining room.");
     }
   };
 

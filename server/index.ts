@@ -44,9 +44,6 @@ io.on("connection", (socket) => {
 
   // data.currentRoomId
 
-
-  // if (socket.recovered) { console.log("\n\nRECOVERY!") };
-
   socket.on("createRoom", (callback) => {
     let randomIdString: string;
 
@@ -73,6 +70,7 @@ io.on("connection", (socket) => {
 
 
   socket.on("joinRoom", (passedId: string, callback) => {
+
     if (!roomStorage[passedId]) {
       callback({ success: false });
       return;

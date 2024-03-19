@@ -77,7 +77,7 @@ const RoomDisplay = () => {
             className="roomIdDisplay"
           >
             {/* molnar.dev/wordchain?{roomId} */}
-            localhost:3000?{roomId}
+            https://chaingame.pages.dev/?{roomId}
           </div>
         )
         : (

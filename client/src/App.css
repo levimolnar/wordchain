@@ -203,6 +203,8 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
   line-height: inherit;
   border-radius: 6px;
 
+  overflow: hidden;
+
   font-size: 1em;
   text-align: center;
   font-style: italic;

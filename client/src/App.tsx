@@ -180,8 +180,10 @@ const App = () => {
 
     socket.on("playerUpdate", newPlayers => setPlayers(newPlayers));
     socket.on("gameStarted", () => setGameStatus("started"));
-    socket.on("gameEnded", () => setGameStatus("setup"));
-    // socket.on("gameInProgress", () => setGameStatus("waiting"));
+    socket.on("gameEnded", () => {
+      setGameStatus("setup");
+      setHistory(new Map());
+    });
 
     socket.on("nextTurn", (newWordObj, turnId) => {
       if (newWordObj) { setHistory(prev => new Map([...Array.from(prev), [newWordObj.word, {userId: newWordObj.userId, userNumber: newWordObj.userNumber}]])) };

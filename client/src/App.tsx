@@ -187,6 +187,8 @@ const App = () => {
       if (newWordObj) { setHistory(prev => new Map([...Array.from(prev), [newWordObj.word, {userId: newWordObj.userId, userNumber: newWordObj.userNumber}]])) };
       setTurnClientId(turnId);
     });
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // start game

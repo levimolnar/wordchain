@@ -17,7 +17,7 @@ export const WordInput = () => {
   const [submitDebounce, setSubmitDebounce] = useState<boolean>(false);
   const [wordError, setWordError] = useState<string>("");
 
-  const toUniqueNames = (arr: Array<{vernacularName: string, language: string}>) => Array.from(new Set(arr.map(i => i.vernacularName.toUpperCase())));
+  // const toUniqueNames = (arr: Array<{vernacularName: string, language: string}>) => Array.from(new Set(arr.map(i => i.vernacularName.toUpperCase())));
 
   // const validateAnimal = async (search: string) => {
   //   try {

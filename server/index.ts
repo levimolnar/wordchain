@@ -19,8 +19,8 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
   connectionStateRecovery: {
-    maxDisconnectionDuration: 2 * 60 * 1000,
-    skipMiddlewares: true,
+    maxDisconnectionDuration: 120_000,
+    // skipMiddlewares: true,
   },
 });
 
@@ -42,7 +42,9 @@ const getRoomSocketIds = (roomName: string): string[] =>
 
 io.on("connection", (socket) => {
 
-  // data.currentRoomId
+  // SOCKET VARIABLES:
+  //   data.currentRoomId - Room ID to fetch more information about room from roomStorage object.
+  //   data.timer         - Timeout instance that's created every round.
 
   socket.on("createRoom", (callback) => {
     let randomIdString: string;
@@ -61,7 +63,6 @@ io.on("connection", (socket) => {
     socket.join(`${randomIdString}-game`);
 
     callback({ roomId: randomIdString });
-    // socket.emit("playerUpdate", [socket.id]);
     io.in(`${randomIdString}-lobby`).emit("playerUpdate", [socket.id]);
 
     console.log(`User "${socket.id}" created room "${randomIdString}".`);
@@ -96,31 +97,80 @@ io.on("connection", (socket) => {
     // emit playerids in game to client
     const gameRoomIds = getRoomSocketIds(`${passedId}-game`);
     io.in(`${passedId}-lobby`).emit("playerUpdate", gameRoomIds);
-
-    console.log("\nroomStorage:");
-    console.log(roomStorage[passedId]);
   });
 
 
   socket.on("start", () => {
     console.log(`Client "${socket.id}" has started game at "${socket.data.currentRoomId}".`);
 
-    io.in(`${socket.data.currentRoomId}-lobby`).emit("gameStarted");
     roomStorage[socket.data.currentRoomId].started = true;
 
     const gameRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-game`);
     const socketIndex = gameRoomIds.indexOf(socket.id);
     roomStorage[socket.data.currentRoomId].turnIndex = socketIndex;
+
+    io.in(`${socket.data.currentRoomId}-lobby`).emit("gameStarted");
     io.in(`${socket.data.currentRoomId}-game`).emit("nextTurn", undefined, gameRoomIds[socketIndex]);
   });
 
+  socket.on("setTimer", (callback) => {
+    console.log(`Timeout started for user ${socket.id}.`);
+    socket.data.timer = setTimeout(() => {
+
+      // disconnect user if they failed to name animal in time
+      console.log(`Client ${socket.id} failed to name animal in time.`);
+      // socket.emit("gameLost");
+
+      socket.leave(`${socket.data.currentRoomId}-game`);
+      const newGameRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-game`);
+
+      // remove socket id from room object
+      const socketIndex = roomStorage[socket.data.currentRoomId].ids.indexOf(socket.id);
+      roomStorage[socket.data.currentRoomId].ids.splice(socketIndex, 1);
+  
+      // end game (win condition) if one client left in room
+      if ( newGameRoomIds.length < 2) {
+ 
+        // move all clients in lobby to game room
+        const lobbyRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-lobby`);
+        lobbyRoomIds.forEach(id => {
+          io.sockets.sockets.get(id)?.join(`${socket.data.currentRoomId}-game`);
+        });
+
+        io.in(`${socket.data.currentRoomId}-game`).emit("gameEnded");
+        io.in(`${socket.data.currentRoomId}-game`).emit("playerUpdate", lobbyRoomIds);
+
+        roomStorage[socket.data.currentRoomId] = {ids: lobbyRoomIds, started: false, turnIndex: undefined};
+        
+        return;
+      };
+
+      const newIndex = socketIndex % roomStorage[socket.data.currentRoomId].ids.length;
+
+      // pass turn on to next player
+      roomStorage[socket.data.currentRoomId].turnIndex = newIndex;
+      io.in(`${socket.data.currentRoomId}-game`).emit("nextTurn", undefined, roomStorage[socket.data.currentRoomId].ids[newIndex]);
+  
+      io.in(`${socket.data.currentRoomId}-lobby`).emit("playerUpdate", newGameRoomIds);
+
+      callback();
+  
+    }, 20_000);
+  });
+
   socket.on("submit", (newWord: string) => {
+
+    clearTimeout(socket.data.timer);
+    socket.data.timer = undefined;
+    
     const gameRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-game`);
     const socketIndex = gameRoomIds.indexOf(socket.id);
     const nextIndex = (socketIndex + 1) % gameRoomIds.length;
-
     roomStorage[socket.data.currentRoomId].turnIndex = nextIndex;
+
+    // next turn emit goes to all players, contains submission and next player id 
     io.in(`${socket.data.currentRoomId}-game`).emit("nextTurn", {word: newWord, userId: socket.id, userNumber: socketIndex}, gameRoomIds[nextIndex]);
+    io.to(gameRoomIds[nextIndex]).emit("turnStart");
   });
 
 
@@ -128,13 +178,18 @@ io.on("connection", (socket) => {
     console.log(`Client "${socket.id}" disconnected from "${socket.data.currentRoomId}".`);
     if (!socket.data.currentRoomId) { return };
 
+    clearTimeout(socket.data.timer);
+    socket.data.timer = undefined;
+
     const newGameRoomIds = getRoomSocketIds(`${socket.data.currentRoomId}-game`);
 
     // remove room object if lobby empty
     if ( newGameRoomIds.length == 0) {
+      delete roomStorage[socket.data.currentRoomId];
+
       console.log(`Room "${socket.data.currentRoomId}" was removed.`);
       console.log("Active rooms:", Object.keys(roomStorage), Object.keys(roomStorage).length);
-      delete roomStorage[socket.data.currentRoomId];
+
       return;
     };
 
@@ -152,10 +207,12 @@ io.on("connection", (socket) => {
       lobbyRoomIds.forEach(id => 
         io.sockets.sockets.get(id)?.join(`${socket.data.currentRoomId}-game`)
       );
-      io.in(`${socket.data.currentRoomId}-game`).emit("playerUpdate", lobbyRoomIds);
+
       io.in(`${socket.data.currentRoomId}-game`).emit("gameEnded");
+      io.in(`${socket.data.currentRoomId}-game`).emit("playerUpdate", lobbyRoomIds);
 
       roomStorage[socket.data.currentRoomId] = {ids: lobbyRoomIds, started: false, turnIndex: undefined};
+
       return;
     };
 
@@ -166,13 +223,6 @@ io.on("connection", (socket) => {
 
       roomStorage[socket.data.currentRoomId].turnIndex = newIndex;
       io.in(`${socket.data.currentRoomId}-game`).emit("nextTurn", undefined, roomStorage[socket.data.currentRoomId].ids[newIndex]);
-
-      // console.log("newIndex:", newIndex, roomStorage[socket.data.currentRoomId].ids, roomStorage[socket.data.currentRoomId].ids[newIndex]);
     };
   });
 });
-
-
-// io.on("reconnect", (socket) => {
-//   console.log("\n\nRECONNECTION!", socket);
-// });

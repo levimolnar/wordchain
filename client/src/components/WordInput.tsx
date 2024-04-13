@@ -62,9 +62,7 @@ export const WordInput = () => {
       // fetch animals where vernacular name contains search
       const response = await fetch([url, params, search].join(""));
       const { results } = await response.json();
-  
-      // console.log(results);
-  
+    
       if (!results.length) { throw Error(`Could not find animal named "${search}".`); }
   
       // find exact match of vernacular name
@@ -116,8 +114,6 @@ export const WordInput = () => {
     };
   };
 
-  // console.log(history, history.size);
-
   return (
     <form 
       className="wordForm"
@@ -134,8 +130,9 @@ export const WordInput = () => {
               className="wordField"
               type="text" 
               name="animal"
-              placeholder={history.size ? "..." : "animal name (common)"}
+              placeholder={history.size ? "..." : "animal name (e.g. 'Elephant')"}
             />
+            <div className="pietimer" key={"timer-" + Array.from(history.keys()).pop()}/>
           </>
         : <div className="wordDisplay">
             <i>Wait for other players to finish turn ...</i>

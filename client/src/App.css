@@ -228,6 +228,8 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
   width: 50%; height: 35px;
   border-bottom: 1px solid var(--primary);
   /* border-radius: 3px; */
+
+  /* background-color: #ff00ff55; */
 }
 
 ::placeholder {
@@ -263,6 +265,35 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
   background-color: transparent;
   background-clip: content-box;
   color: var(--primaryDim);
+}
+
+
+.pietimer {
+  width: 21px; height: 20px;
+  border-radius: 50%;
+  margin: auto 5px;
+
+  background-image: linear-gradient(90deg, #bbb 50%, var(--background) 50%);
+  position: relative;
+  overflow: hidden;
+}
+
+.pietimer:after {
+  position: absolute;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  content: "";
+  background: var(--background);
+  transform-origin: 0 50%;
+  animation: pieAniAfter 20s linear forwards;
+}
+
+@keyframes pieAniAfter {
+  0% { transform: rotate(0deg); background: #bbb; }
+  49.99% { transform: rotate(180deg); background: #bbb; }
+  50% { transform: rotate(0deg); background: var(--background); }
+  100% { transform: rotate(180deg); background: var(--background); }
 }
 
 .error {

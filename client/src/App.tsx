@@ -29,21 +29,10 @@ const PlayerPanel = ({ players, turnId }: { players: string[], turnId: string })
           key={playerName}
         >
           {(playerName === turnId) ? "●\xa0" : "\xa0\xa0"} 
-          PLAYER {index + 1}
+          PLAYER {index + 1} [{playerName}]
           {(playerName === socket.id) ? "\xa0(you)" : ""}
         </div>
       )}
-      {/* <div style={{lineHeight: "2em", fontSize: ".8em", paddingTop: "10px"}}>
-        WAITING (-):
-      </div> */}
-      {/* {players.map(playerName => 
-        <div 
-          className={(turnId === playerName) ? "activePlayerName" : "playerName"}
-          key={playerName}
-        >
-          {playerName}
-        </div>
-      )} */}
     </div>
   );
 };
@@ -76,8 +65,7 @@ const RoomDisplay = () => {
           <div
             className="roomIdDisplay"
           >
-            {/* molnar.dev/wordchain?{roomId} */}
-            https://chaingame.pages.dev/?{roomId}
+            chaingame.pages.dev/?{roomId}
           </div>
         )
         : (
@@ -153,7 +141,6 @@ const App = () => {
     historyState: [, setHistory],
   } = useContext(GameContext);
 
-  // const [roomId, setRoomId] = useState<string[]>([]);
   const [gameStatus, setGameStatus] = useState<"setup" | "started" | "waiting">("setup");
   useEffect(() => {
 
@@ -169,10 +156,8 @@ const App = () => {
           // };
           if (response.status === "inProgress") { 
             setGameStatus("waiting"); 
-            console.log("Game is already in progress.");
           };
         } else {
-          // console.log(`Failed to join room "${urlString}"`);
           window.history.pushState(null, "", window.location.href.split("?")[0]);
         };
       });
@@ -181,13 +166,25 @@ const App = () => {
     socket.on("playerUpdate", newPlayers => setPlayers(newPlayers));
     socket.on("gameStarted", () => setGameStatus("started"));
     socket.on("gameEnded", () => {
+      setTurnClientId("");
       setGameStatus("setup");
       setHistory(new Map());
     });
 
     socket.on("nextTurn", (newWordObj, turnId) => {
-      if (newWordObj) { setHistory(prev => new Map([...Array.from(prev), [newWordObj.word, {userId: newWordObj.userId, userNumber: newWordObj.userNumber}]])) };
+            
+      // add new word to map
+      if (newWordObj) {
+        setHistory(prev => 
+          new Map([...Array.from(prev), [newWordObj.word, {userId: newWordObj.userId, userNumber: newWordObj.userNumber}]])) 
+      };
+
       setTurnClientId(turnId);
+
+      // if turn is passed to current user, set timer
+      if (turnId === socket.id) {
+        socket.emit("setTimer", () => setGameStatus("waiting"));
+      };
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -196,7 +193,7 @@ const App = () => {
   // start game
   const startGame = () => { 
     if (roomId) {
-      socket.emit("start") ;
+      socket.emit("start");
     } else {
       console.log("Cannot start game without joining room.");
     }

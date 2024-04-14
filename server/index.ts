@@ -155,7 +155,7 @@ io.on("connection", (socket) => {
 
       callback();
   
-    }, 20_000);
+    }, 30_000);
   });
 
   socket.on("submit", (newWord: string) => {

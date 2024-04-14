@@ -286,7 +286,7 @@ button { background-color: transparent; border: none; outline: none; padding: 0;
   content: "";
   background: var(--background);
   transform-origin: 0 50%;
-  animation: pieAniAfter 20s linear forwards;
+  animation: pieAniAfter 30s linear forwards;
 }
 
 @keyframes pieAniAfter {
